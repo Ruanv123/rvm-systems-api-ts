@@ -1,0 +1,204 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Funcionario {
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  password String
+  telefone String
+  avatar   String?
+  desc     String?
+
+  resetCode String?
+
+  Setor            Setor?              @relation(fields: [setorId], references: [id])
+  setorId          String?
+  lojas            Loja[]
+  funcionarioAcces FuncionarioAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("funcionario")
+}
+
+model FuncionarioAccess {
+  id String @id @default(uuid())
+
+  Funcionario   Funcionario? @relation(fields: [funcionarioId], references: [id])
+  funcionarioId String?
+
+  Access   Access? @relation(fields: [accessId], references: [id])
+  accessId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("funcionario_acess")
+}
+
+model Access {
+  id               String              @id @default(uuid())
+  name             String              @unique
+  funcionarioAcces FuncionarioAccess[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("acesso")
+}
+
+model Setor {
+  id   String @id @default(uuid())
+  name String @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  funcionario Funcionario[]
+
+  @@map("setor")
+}
+
+model Produto {
+  id         String  @id @default(uuid())
+  nome       String
+  descricao  String
+  preco      Decimal
+  imagem     String?
+  quantidade Int
+  tipo       String
+  codbarras  String  @unique
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  Loja         Loja?       @relation(fields: [lojaId], references: [id])
+  lojaId       String?
+  Fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  fornecedorId String?
+
+  @@map("produto")
+}
+
+model Loja {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  produtos Produto[]
+
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  Funcionario   Funcionario? @relation(fields: [funcionarioId], references: [id])
+  funcionarioId String?
+
+  @@map("loja")
+}
+
+model Fornecedor {
+  id       String  @id @default(uuid())
+  nome     String  @unique
+  telefone String
+  email    String  @unique
+  site     String?
+  cnpj     String
+  endereco String
+  cep      String
+  tipo     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  produto        Produto[]
+  contas_a_pagar ContasAPagar[]
+
+  @@map("fornecedor")
+}
+
+model Cliente {
+  id        String  @id @default(uuid())
+  name      String
+  email     String  @unique
+  password  String
+  telefone  String
+  avatar    String?
+  descricao String?
+  cpf       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cliente")
+}
+
+// recebido a receber | pago a pagar
+model Situacao {
+  id       String @id @default(uuid())
+  situacao String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("situacao")
+}
+
+model Atividade {
+  id        String @id @default(uuid())
+  atividade String
+
+  constas_a_pagar ContasAPagar[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("atividade")
+}
+
+model ContasAPagar {
+  id           String  @id @default(uuid())
+  fornecedorId String?
+  atividadeId  String?
+  numeroDoc    Int
+
+  Fornecedor Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  Atividade  Atividade?  @relation(fields: [atividadeId], references: [id])
+
+  @@map("contas_a_pagar")
+}
+
+model MeioPagamento {
+  id   String @id @default(uuid())
+  // cartao | dinheiro | pix | boleto
+  meio String
+
+  contas_a_receber ContasAReceber[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("meio_pagamento")
+}
+
+model ContasAReceber {
+  id String @id @default(uuid())
+
+  data            DateTime
+  valor           Float
+  descricao       String
+  // cartao | boleto | deposito | 
+  meioPagamentoId String?
+  // Recebido | Pendente
+  situacao        String
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  MeioPagamento MeioPagamento? @relation(fields: [meioPagamentoId], references: [id])
+
+  @@map("contas_a_receber")
+}
